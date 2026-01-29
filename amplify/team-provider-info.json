@@ -24,7 +24,7 @@
       "function": {
         "financetrackere30b1453": {
           "deploymentBucketName": "amplify-financetracker-main-29933-deployment",
-          "s3Key": "amplify-builds/financetrackere30b1453-503647373275496b5341-build.zip"
+          "s3Key": "amplify-builds/financetrackere30b1453-45346f6c34555076644a-build.zip"
         }
       },
       "custom": {

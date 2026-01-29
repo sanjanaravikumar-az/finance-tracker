@@ -34,3 +34,20 @@ type FinancialSummary @model {
   month: String!
   owner: String
 }
+
+# Custom query to calculate financial summary using Lambda
+type CalculatedSummary {
+  totalIncome: Float!
+  totalExpenses: Float!
+  balance: Float!
+  savingsRate: Float!
+}
+
+input TransactionInput {
+  amount: Float!
+  type: TransactionType!
+}
+
+type Query {
+  calculateFinancialSummary(transactions: [TransactionInput!]!): CalculatedSummary @function(name: "financetrackere30b1453")
+}

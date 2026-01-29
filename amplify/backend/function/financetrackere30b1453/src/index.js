@@ -1,20 +1,19 @@
 /**
- * @type {import('@types/aws-lambda').APIGatewayProxyHandler}
+ * AppSync GraphQL resolver for calculating financial summary
+ * @type {import('@types/aws-lambda').AppSyncResolverHandler}
  */
 exports.handler = async (event) => {
     console.log(`EVENT: ${JSON.stringify(event)}`);
     
-    const { httpMethod, body } = event;
-    
-    if (httpMethod === 'POST') {
-        const data = JSON.parse(body || '{}');
-        const { transactions } = data;
+    try {
+        // Get transactions from GraphQL arguments
+        const transactions = event.arguments?.transactions || [];
         
         // Calculate financial summary
         const summary = transactions.reduce((acc, transaction) => {
             if (transaction.type === 'INCOME') {
                 acc.totalIncome += transaction.amount;
-            } else {
+            } else if (transaction.type === 'EXPENSE') {
                 acc.totalExpenses += transaction.amount;
             }
             return acc;
@@ -22,25 +21,14 @@ exports.handler = async (event) => {
         
         summary.balance = summary.totalIncome - summary.totalExpenses;
         summary.savingsRate = summary.totalIncome > 0 
-            ? ((summary.balance / summary.totalIncome) * 100).toFixed(2) 
+            ? parseFloat(((summary.balance / summary.totalIncome) * 100).toFixed(2))
             : 0;
         
-        return {
-            statusCode: 200,
-            headers: {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Headers": "*"
-            },
-            body: JSON.stringify(summary),
-        };
+        // Return the summary directly (AppSync handles the response wrapping)
+        return summary;
+        
+    } catch (error) {
+        console.error('Error calculating summary:', error);
+        throw error;
     }
-    
-    return {
-        statusCode: 200,
-        headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "*"
-        },
-        body: JSON.stringify({ message: 'Finance Calculator Lambda' }),
-    };
 };

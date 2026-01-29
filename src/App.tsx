@@ -3,10 +3,10 @@ import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
 import { signIn, signOut, getCurrentUser } from 'aws-amplify/auth';
 import { uploadData, getUrl } from 'aws-amplify/storage';
-import awsconfig from './aws-exports';
+import amplifyconfig from './amplifyconfiguration.json';
 import './App.css';
 
-Amplify.configure(awsconfig);
+Amplify.configure(amplifyconfig);
 const client = generateClient();
 
 // GraphQL queries and mutations
@@ -40,6 +40,17 @@ const createTransaction = /* GraphQL */ `
   }
 `;
 
+const calculateFinancialSummaryQuery = /* GraphQL */ `
+  query CalculateFinancialSummary($transactions: [TransactionInput!]!) {
+    calculateFinancialSummary(transactions: $transactions) {
+      totalIncome
+      totalExpenses
+      balance
+      savingsRate
+    }
+  }
+`;
+
 interface Transaction {
   id: string;
   description: string;
@@ -54,7 +65,7 @@ interface FinancialSummary {
   totalIncome: number;
   totalExpenses: number;
   balance: number;
-  savingsRate: string;
+  savingsRate: number;
 }
 
 function App() {
@@ -128,7 +139,7 @@ function App() {
     }
   };
 
-  const handleAddTransaction = async (e: React.FormEvent) => {
+  const handleAddTransaction = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     if (!description || !amount || !category) {
@@ -186,41 +197,37 @@ function App() {
 
   const calculateSummary = async () => {
     try {
-      // Call Lambda function for calculations
-      const apiEndpoint = awsconfig.aws_cloud_logic_custom?.[0]?.endpoint;
+      // Prepare transaction data for Lambda (only amount and type needed)
+      const transactionInputs = transactions.map(t => ({
+        amount: t.amount,
+        type: t.type
+      }));
       
-      if (apiEndpoint) {
-        const response = await fetch(apiEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ transactions }),
-        });
-        
-        const data = await response.json();
-        setSummary(data);
-      } else {
-        // Fallback calculation if Lambda not configured
-        const localSummary = transactions.reduce(
-          (acc, t) => {
-            if (t.type === 'INCOME') {
-              acc.totalIncome += t.amount;
-            } else {
-              acc.totalExpenses += t.amount;
-            }
-            return acc;
-          },
-          { totalIncome: 0, totalExpenses: 0, balance: 0, savingsRate: '0' }
-        );
-        localSummary.balance = localSummary.totalIncome - localSummary.totalExpenses;
-        localSummary.savingsRate = localSummary.totalIncome > 0
-          ? ((localSummary.balance / localSummary.totalIncome) * 100).toFixed(2)
-          : '0';
-        setSummary(localSummary);
-      }
+      // Call Lambda function via GraphQL query
+      const result: any = await client.graphql({ 
+        query: calculateFinancialSummaryQuery,
+        variables: { transactions: transactionInputs }
+      });
+      setSummary(result.data.calculateFinancialSummary);
     } catch (error) {
-      console.error('Error calculating summary:', error);
+      console.error('Error calculating summary via Lambda:', error);
+      // Fallback to local calculation if Lambda fails
+      const localSummary = transactions.reduce(
+        (acc, t) => {
+          if (t.type === 'INCOME') {
+            acc.totalIncome += t.amount;
+          } else {
+            acc.totalExpenses += t.amount;
+          }
+          return acc;
+        },
+        { totalIncome: 0, totalExpenses: 0, balance: 0, savingsRate: 0 }
+      );
+      localSummary.balance = localSummary.totalIncome - localSummary.totalExpenses;
+      localSummary.savingsRate = localSummary.totalIncome > 0
+        ? parseFloat(((localSummary.balance / localSummary.totalIncome) * 100).toFixed(2))
+        : 0;
+      setSummary(localSummary);
     }
   };
 
