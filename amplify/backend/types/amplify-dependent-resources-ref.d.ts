@@ -7,7 +7,7 @@ export type AmplifyDependentResourcesAttributes = {
     }
   },
   "auth": {
-    "financetracker96b98779": {
+    "financetrackerb192a2d4": {
       "AppClientID": "string",
       "AppClientIDWeb": "string",
       "IdentityPoolId": "string",
@@ -17,8 +17,15 @@ export type AmplifyDependentResourcesAttributes = {
       "UserPoolName": "string"
     }
   },
+  "custom": {
+    "customfinance": {
+      "BudgetAlertTopicArn": "string",
+      "MonthlyReportRuleArn": "string",
+      "MonthlyReportTopicArn": "string"
+    }
+  },
   "function": {
-    "financetrackerbfc22a06": {
+    "financetrackere30b1453": {
       "Arn": "string",
       "LambdaExecutionRole": "string",
       "LambdaExecutionRoleArn": "string",
@@ -27,7 +34,7 @@ export type AmplifyDependentResourcesAttributes = {
     }
   },
   "storage": {
-    "s3c787456e": {
+    "s361d53dc0": {
       "BucketName": "string",
       "Region": "string"
     }

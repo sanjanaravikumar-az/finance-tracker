@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
-import { signIn, signOut, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
+import { signIn, signOut, getCurrentUser } from 'aws-amplify/auth';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import awsconfig from './aws-exports';
 import './App.css';
@@ -144,7 +144,7 @@ function App() {
       // Upload receipt to S3 if file is selected
       if (receiptFile) {
         const fileName = `receipts/${Date.now()}-${receiptFile.name}`;
-        const result = await uploadData({
+        await uploadData({
           path: fileName,
           data: receiptFile,
         }).result;
@@ -187,7 +187,6 @@ function App() {
   const calculateSummary = async () => {
     try {
       // Call Lambda function for calculations
-      const session = await fetchAuthSession();
       const apiEndpoint = awsconfig.aws_cloud_logic_custom?.[0]?.endpoint;
       
       if (apiEndpoint) {

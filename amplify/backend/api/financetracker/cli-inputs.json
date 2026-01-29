@@ -6,7 +6,7 @@
     "defaultAuthType": {
       "mode": "API_KEY",
       "expirationTime": 100,
-      "apiKeyExpirationDate": "2026-05-09T06:11:55.104Z",
+      "apiKeyExpirationDate": "2026-05-09T06:39:40.968Z",
       "keyDescription": "graphql"
     }
   }

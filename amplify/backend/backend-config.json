@@ -7,7 +7,7 @@
           "additionalAuthenticationProviders": [],
           "defaultAuthentication": {
             "apiKeyConfig": {
-              "apiKeyExpirationDate": "2026-05-09T06:11:55.104Z",
+              "apiKeyExpirationDate": "2026-05-09T06:39:40.968Z",
               "apiKeyExpirationDays": 100,
               "description": "graphql"
             },
@@ -20,7 +20,7 @@
     }
   },
   "auth": {
-    "financetracker96b98779": {
+    "financetrackerb192a2d4": {
       "customAuth": false,
       "dependsOn": [],
       "frontendAuthConfig": {
@@ -54,14 +54,32 @@
     }
   },
   "function": {
-    "financetrackerbfc22a06": {
+    "financetrackere30b1453": {
       "build": true,
       "providerPlugin": "awscloudformation",
       "service": "Lambda"
     }
   },
+  "parameters": {
+    "AMPLIFY_function_financetrackere30b1453_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "financetrackere30b1453"
+        }
+      ]
+    },
+    "AMPLIFY_function_financetrackere30b1453_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "financetrackere30b1453"
+        }
+      ]
+    }
+  },
   "storage": {
-    "s3c787456e": {
+    "s361d53dc0": {
       "dependsOn": [],
       "providerPlugin": "awscloudformation",
       "service": "S3"
