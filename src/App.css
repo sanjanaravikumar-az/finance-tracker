@@ -53,6 +53,9 @@ body {
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   margin-top: 100px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .auth-container h1 {
@@ -60,9 +63,50 @@ body {
   margin-bottom: 30px;
 }
 
+.auth-container h2 {
+  color: #667eea;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
 .auth-container p {
   margin: 20px 0;
   color: #666;
+}
+
+.auth-container form {
+  text-align: left;
+  margin-top: 20px;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.auth-tabs button {
+  flex: 1;
+  padding: 12px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-bottom: -2px;
+}
+
+.auth-tabs button.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+.auth-tabs button:hover {
+  color: #667eea;
 }
 
 .demo-note {

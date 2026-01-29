@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
-import { signIn, signOut, getCurrentUser } from 'aws-amplify/auth';
+import { signIn, signOut, getCurrentUser, signUp, confirmSignUp } from 'aws-amplify/auth';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import amplifyconfig from './amplifyconfiguration.json';
 import './App.css';
@@ -74,6 +74,13 @@ function App() {
   const [summary, setSummary] = useState<FinancialSummary | null>(null);
   const [loading, setLoading] = useState(false);
   
+  // Auth state
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmationCode, setConfirmationCode] = useState('');
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  
   // Form state
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
@@ -106,13 +113,59 @@ function App() {
     }
   };
 
-  const handleSignIn = async () => {
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     try {
-      await signIn({ username: 'testuser', password: 'TestPassword123!' });
+      setLoading(true);
+      await signUp({
+        username: email,
+        password,
+        options: {
+          userAttributes: {
+            email,
+          },
+        },
+      });
+      setNeedsConfirmation(true);
+      alert('Sign up successful! Check your email for confirmation code.');
+    } catch (error: any) {
+      console.error('Error signing up:', error);
+      alert(`Sign up failed: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      await confirmSignUp({
+        username: email,
+        confirmationCode,
+      });
+      alert('Email confirmed! You can now sign in.');
+      setNeedsConfirmation(false);
+      setAuthMode('signin');
+    } catch (error: any) {
+      console.error('Error confirming sign up:', error);
+      alert(`Confirmation failed: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      await signIn({ username: email, password });
       await checkUser();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing in:', error);
-      alert('Sign in failed. Using demo mode.');
+      alert(`Sign in failed: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -232,14 +285,106 @@ function App() {
   };
 
   if (!user) {
+    if (needsConfirmation) {
+      return (
+        <div className="app-container">
+          <h1>💰 Finance Tracker</h1>
+          <div className="auth-container">
+            <h2>Confirm Your Email</h2>
+            <form onSubmit={handleConfirmSignUp}>
+              <div className="form-group">
+                <label>Confirmation Code</label>
+                <input
+                  type="text"
+                  value={confirmationCode}
+                  onChange={(e) => setConfirmationCode(e.target.value)}
+                  placeholder="Enter code from email"
+                  required
+                />
+              </div>
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? 'Confirming...' : 'Confirm Email'}
+              </button>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="app-container">
         <h1>💰 Finance Tracker</h1>
         <div className="auth-container">
-          <p>Please sign in to access your finance tracker</p>
-          <button onClick={handleSignIn} className="btn-primary">
-            Sign In
-          </button>
+          <div className="auth-tabs">
+            <button
+              className={authMode === 'signin' ? 'active' : ''}
+              onClick={() => setAuthMode('signin')}
+            >
+              Sign In
+            </button>
+            <button
+              className={authMode === 'signup' ? 'active' : ''}
+              onClick={() => setAuthMode('signup')}
+            >
+              Sign Up
+            </button>
+          </div>
+
+          {authMode === 'signin' ? (
+            <form onSubmit={handleSignIn}>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  required
+                />
+              </div>
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? 'Signing in...' : 'Sign In'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleSignUp}>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Min 8 characters"
+                  required
+                  minLength={8}
+                />
+              </div>
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? 'Signing up...' : 'Sign Up'}
+              </button>
+            </form>
+          )}
+
           <p className="demo-note">
             Demo: Uses Amplify Auth, API (GraphQL), Storage (S3), and Lambda
           </p>
