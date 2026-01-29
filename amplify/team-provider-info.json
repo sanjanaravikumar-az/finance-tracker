@@ -10,6 +10,14 @@
       "StackName": "amplify-financetracker-main-eb151",
       "StackId": "arn:aws:cloudformation:us-east-1:079385506759:stack/amplify-financetracker-main-eb151/00c3cc60-fcd9-11f0-b004-12e7d9282ddd",
       "AmplifyAppId": "d3g1whc4er42ov"
+    },
+    "categories": {
+      "auth": {
+        "financetracker96b98779": {}
+      },
+      "function": {
+        "financetrackerbfc22a06": {}
+      }
     }
   }
 }

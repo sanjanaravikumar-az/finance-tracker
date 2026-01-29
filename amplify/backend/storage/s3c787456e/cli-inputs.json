@@ -1,0 +1,16 @@
+{
+  "resourceName": "s3c787456e",
+  "policyUUID": "c787456e",
+  "bucketName": "financetracker1c469bed6bfe46528cbd48078b7b0c03",
+  "storageAccess": "authAndGuest",
+  "guestAccess": [
+    "READ"
+  ],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ",
+    "DELETE"
+  ],
+  "triggerFunction": "NONE",
+  "groupAccess": {}
+}
