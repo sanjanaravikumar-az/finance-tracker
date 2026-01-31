@@ -15,6 +15,22 @@
     },
     "s3Key": {
       "Type": "String"
+    },
+    "customcustomfinanceBudgetAlertTopicArn": {
+      "Type": "String",
+      "Default": "NONE"
+    },
+    "customcustomfinanceMonthlyReportTopicArn": {
+      "Type": "String",
+      "Default": "NONE"
+    },
+    "apifinancetrackerGraphQLAPIIdOutput": {
+      "Type": "String",
+      "Default": "NONE"
+    },
+    "apifinancetrackerGraphQLAPIEndpointOutput": {
+      "Type": "String",
+      "Default": "NONE"
     }
   },
   "Conditions": {
@@ -69,6 +85,15 @@
             },
             "REGION": {
               "Ref": "AWS::Region"
+            },
+            "BUDGET_ALERT_TOPIC_ARN": {
+              "Ref": "customcustomfinanceBudgetAlertTopicArn"
+            },
+            "MONTHLY_REPORT_TOPIC_ARN": {
+              "Ref": "customcustomfinanceMonthlyReportTopicArn"
+            },
+            "API_FINANCETRACKER_TRANSACTIONTABLE_NAME": {
+              "Fn::Sub": "Transaction-${apifinancetrackerGraphQLAPIIdOutput}-${env}"
             }
           }
         },
@@ -164,6 +189,59 @@
           ]
         }
       }
+    },
+    "CustomLambdaExecutionPolicy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "custom-lambda-execution-policy",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": [
+                "sns:Publish"
+              ],
+              "Resource": [
+                {
+                  "Fn::Sub": [
+                    "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:finance-budget-alerts-*",
+                    {}
+                  ]
+                },
+                {
+                  "Fn::Sub": [
+                    "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:finance-monthly-reports-*",
+                    {}
+                  ]
+                }
+              ],
+              "Effect": "Allow"
+            },
+            {
+              "Action": [
+                "dynamodb:Scan",
+                "dynamodb:Query",
+                "dynamodb:GetItem"
+              ],
+              "Resource": [
+                {
+                  "Fn::Sub": [
+                    "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Transaction-*",
+                    {}
+                  ]
+                }
+              ],
+              "Effect": "Allow"
+            }
+          ]
+        },
+        "Roles": [
+          {
+            "Ref": "LambdaExecutionRole"
+          }
+        ]
+      },
+      "DependsOn": "LambdaExecutionRole"
     }
   },
   "Outputs": {

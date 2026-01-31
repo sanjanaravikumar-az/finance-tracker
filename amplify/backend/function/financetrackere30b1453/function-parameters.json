@@ -1,3 +1,15 @@
 {
-  "lambdaLayers": []
+  "lambdaLayers": [],
+  "dependsOn": [
+    {
+      "category": "custom",
+      "resourceName": "customfinance",
+      "attributes": ["BudgetAlertTopicArn", "MonthlyReportTopicArn"]
+    },
+    {
+      "category": "api",
+      "resourceName": "financetracker",
+      "attributes": ["GraphQLAPIIdOutput", "GraphQLAPIEndpointOutput"]
+    }
+  ]
 }

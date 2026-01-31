@@ -43,11 +43,16 @@ type CalculatedSummary {
   savingsRate: Float!
 }
 
-input TransactionInput {
-  amount: Float!
-  type: TransactionType!
+type NotificationResult {
+  success: Boolean!
+  message: String!
 }
 
 type Query {
-  calculateFinancialSummary(transactions: [TransactionInput!]!): CalculatedSummary @function(name: "financetrackere30b1453")
+  calculateFinancialSummary: CalculatedSummary @function(name: "financetrackere30b1453")
+}
+
+type Mutation {
+  sendMonthlyReport(email: String!): NotificationResult @function(name: "financetrackere30b1453")
+  sendBudgetAlert(email: String!, category: String!, exceeded: Float!): NotificationResult @function(name: "financetrackere30b1453")
 }

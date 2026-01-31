@@ -41,8 +41,8 @@ const createTransaction = /* GraphQL */ `
 `;
 
 const calculateFinancialSummaryQuery = /* GraphQL */ `
-  query CalculateFinancialSummary($transactions: [TransactionInput!]!) {
-    calculateFinancialSummary(transactions: $transactions) {
+  query CalculateFinancialSummary {
+    calculateFinancialSummary {
       totalIncome
       totalExpenses
       balance
@@ -250,16 +250,9 @@ function App() {
 
   const calculateSummary = async () => {
     try {
-      // Prepare transaction data for Lambda (only amount and type needed)
-      const transactionInputs = transactions.map(t => ({
-        amount: t.amount,
-        type: t.type
-      }));
-      
-      // Call Lambda function via GraphQL query
+      // Call Lambda function via GraphQL query (Lambda reads from DynamoDB)
       const result: any = await client.graphql({ 
-        query: calculateFinancialSummaryQuery,
-        variables: { transactions: transactionInputs }
+        query: calculateFinancialSummaryQuery
       });
       setSummary(result.data.calculateFinancialSummary);
     } catch (error) {

@@ -20,7 +20,6 @@ export type AmplifyDependentResourcesAttributes = {
   "custom": {
     "customfinance": {
       "BudgetAlertTopicArn": "string",
-      "MonthlyReportRuleArn": "string",
       "MonthlyReportTopicArn": "string"
     }
   },

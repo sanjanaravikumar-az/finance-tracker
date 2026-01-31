@@ -1,6 +1,36 @@
 [
   {
-    "Action": [],
-    "Resource": []
+    "Action": [
+      "sns:Publish"
+    ],
+    "Resource": [
+      {
+        "Fn::Sub": [
+          "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:finance-budget-alerts-*",
+          {}
+        ]
+      },
+      {
+        "Fn::Sub": [
+          "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:finance-monthly-reports-*",
+          {}
+        ]
+      }
+    ]
+  },
+  {
+    "Action": [
+      "dynamodb:Scan",
+      "dynamodb:Query",
+      "dynamodb:GetItem"
+    ],
+    "Resource": [
+      {
+        "Fn::Sub": [
+          "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Transaction-*",
+          {}
+        ]
+      }
+    ]
   }
 ]
