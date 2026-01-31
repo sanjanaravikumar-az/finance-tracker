@@ -11,5 +11,8 @@
       "resourceName": "financetracker",
       "attributes": ["GraphQLAPIIdOutput", "GraphQLAPIEndpointOutput"]
     }
-  ]
+  ],
+  "permissions": {
+    "sts": ["GetCallerIdentity"]
+  }
 }
