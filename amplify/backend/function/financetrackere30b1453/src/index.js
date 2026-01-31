@@ -1,6 +1,12 @@
-const AWS = require('aws-sdk');
-const dynamodb = new AWS.DynamoDB.DocumentClient();
-const sns = new AWS.SNS();
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, ScanCommand } = require('@aws-sdk/lib-dynamodb');
+const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
+const { STSClient, GetCallerIdentityCommand } = require('@aws-sdk/client-sts');
+
+const dynamoClient = new DynamoDBClient({});
+const dynamodb = DynamoDBDocumentClient.from(dynamoClient);
+const sns = new SNSClient({});
+const sts = new STSClient({});
 
 /**
  * AppSync GraphQL resolver for calculating financial summary and sending notifications
@@ -41,9 +47,9 @@ async function calculateSummaryFromDB(event) {
     
     try {
         // Scan all transactions from DynamoDB
-        const result = await dynamodb.scan({
+        const result = await dynamodb.send(new ScanCommand({
             TableName: tableName
-        }).promise();
+        }));
         
         const transactions = result.Items || [];
         
@@ -84,9 +90,9 @@ async function sendMonthlyReport(event) {
     
     try {
         // Get financial summary from DynamoDB
-        const result = await dynamodb.scan({
+        const result = await dynamodb.send(new ScanCommand({
             TableName: tableName
-        }).promise();
+        }));
         
         const transactions = result.Items || [];
         const summary = transactions.reduce((acc, transaction) => {
@@ -104,7 +110,7 @@ async function sendMonthlyReport(event) {
             : 0;
         
         // Send SNS notification with actual data
-        await sns.publish({
+        await sns.send(new PublishCommand({
             TopicArn: topicArn,
             Subject: '📊 Your Monthly Financial Report',
             Message: `Hello,
@@ -128,7 +134,7 @@ Finance Tracker Team`,
                     StringValue: email
                 }
             }
-        }).promise();
+        }));
         
         return {
             success: true,
@@ -158,7 +164,7 @@ async function sendBudgetAlert(event) {
     
     try {
         // Get category spending from DynamoDB
-        const result = await dynamodb.scan({
+        const result = await dynamodb.send(new ScanCommand({
             TableName: tableName,
             FilterExpression: 'category = :category AND #type = :type',
             ExpressionAttributeNames: {
@@ -168,12 +174,12 @@ async function sendBudgetAlert(event) {
                 ':category': category,
                 ':type': 'EXPENSE'
             }
-        }).promise();
+        }));
         
         const categoryTransactions = result.Items || [];
         const totalSpent = categoryTransactions.reduce((sum, t) => sum + t.amount, 0);
         
-        await sns.publish({
+        await sns.send(new PublishCommand({
             TopicArn: topicArn,
             Subject: `⚠️ Budget Alert: ${category}`,
             Message: `Hello,
@@ -204,7 +210,7 @@ Finance Tracker Team`,
                     StringValue: exceeded.toString()
                 }
             }
-        }).promise();
+        }));
         
         return {
             success: true,
@@ -221,7 +227,6 @@ Finance Tracker Team`,
 
 // Helper function to get AWS account ID from STS
 async function getAccountId() {
-    const sts = new AWS.STS();
-    const identity = await sts.getCallerIdentity().promise();
+    const identity = await sts.send(new GetCallerIdentityCommand({}));
     return identity.Account;
 }
