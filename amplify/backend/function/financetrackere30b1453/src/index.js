@@ -115,7 +115,21 @@ async function sendMonthlyReport(args) {
         const accountId = await getAccountId();
         const topicArn = `arn:aws:sns:${region}:${accountId}:finance-monthly-reports-${env}`;
         
-        console.log('Using topic ARN:', topicArn);
+        console.log('Constructed topic ARN:', topicArn);
+        console.log('Account ID:', accountId);
+        console.log('Region:', region);
+        console.log('Environment:', env);
+        
+        // First, let's try to list topics to see what exists
+        const { SNSClient, ListTopicsCommand } = require('@aws-sdk/client-sns');
+        const snsClient = new SNSClient({});
+        
+        try {
+            const listResult = await snsClient.send(new ListTopicsCommand({}));
+            console.log('Available SNS topics:', JSON.stringify(listResult.Topics, null, 2));
+        } catch (listError) {
+            console.error('Error listing topics:', listError);
+        }
         
         const tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
         console.log('Table name:', tableName);
@@ -185,6 +199,8 @@ Finance Tracker Team`,
     } catch (error) {
         console.error('Error sending monthly report:', error);
         console.error('Error stack:', error.stack);
+        console.error('Error name:', error.name);
+        console.error('Error code:', error.code);
         const errorResponse = {
             success: false,
             message: `Failed to send report: ${error.message}`

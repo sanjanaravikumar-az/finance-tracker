@@ -1,7 +1,8 @@
 [
   {
     "Action": [
-      "sns:Publish"
+      "sns:Publish",
+      "sns:ListTopics"
     ],
     "Resource": [
       {
@@ -13,6 +14,12 @@
       {
         "Fn::Sub": [
           "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:finance-monthly-reports-*",
+          {}
+        ]
+      },
+      {
+        "Fn::Sub": [
+          "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*",
           {}
         ]
       }
