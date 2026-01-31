@@ -60,15 +60,6 @@ const sendMonthlyReportMutation = /* GraphQL */ `
   }
 `;
 
-const sendBudgetAlertMutation = /* GraphQL */ `
-  mutation SendBudgetAlert($email: String!, $category: String!, $exceeded: Float!) {
-    sendBudgetAlert(email: $email, category: $category, exceeded: $exceeded) {
-      success
-      message
-    }
-  }
-`;
-
 interface Transaction {
   id: string;
   description: string;
