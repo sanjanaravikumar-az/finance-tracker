@@ -3,7 +3,6 @@ import * as AmplifyHelpers from '@aws-amplify/cli-extensibility-helper';
 import { AmplifyDependentResourcesAttributes } from '../../types/amplify-dependent-resources-ref';
 import { Construct } from 'constructs';
 import * as sns from 'aws-cdk-lib/aws-sns';
-import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
 
 export class cdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps, amplifyResourceProps?: AmplifyHelpers.AmplifyResourceProps) {
@@ -23,11 +22,6 @@ export class cdkStack extends cdk.Stack {
       displayName: 'Finance Tracker Budget Alerts',
     });
 
-    // Subscribe your email to budget alerts (REPLACE WITH YOUR EMAIL)
-    budgetAlertTopic.addSubscription(
-      new subs.EmailSubscription('your-email@example.com')
-    );
-
     new cdk.CfnOutput(this, 'BudgetAlertTopicArn', {
       value: budgetAlertTopic.topicArn,
       description: 'SNS Topic ARN for budget alerts',
@@ -39,11 +33,6 @@ export class cdkStack extends cdk.Stack {
       topicName: `finance-monthly-reports-${cdk.Fn.ref('env')}`,
       displayName: 'Finance Tracker Monthly Reports',
     });
-
-    // Subscribe your email to monthly reports (REPLACE WITH YOUR EMAIL)
-    monthlyReportTopic.addSubscription(
-      new subs.EmailSubscription('your-email@example.com')
-    );
 
     new cdk.CfnOutput(this, 'MonthlyReportTopicArn', {
       value: monthlyReportTopic.topicArn,
