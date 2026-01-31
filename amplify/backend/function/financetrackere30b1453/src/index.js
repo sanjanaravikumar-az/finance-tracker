@@ -23,6 +23,9 @@ exports.handler = async (event) => {
             case 'sendBudgetAlert':
                 return await sendBudgetAlert(event);
             
+            case 'subscribeToNotifications':
+                return await subscribeToNotifications(event);
+            
             default:
                 throw new Error(`Unknown field: ${fieldName}`);
         }

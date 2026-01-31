@@ -51,6 +51,24 @@ const calculateFinancialSummaryQuery = /* GraphQL */ `
   }
 `;
 
+const sendMonthlyReportMutation = /* GraphQL */ `
+  mutation SendMonthlyReport($email: String!) {
+    sendMonthlyReport(email: $email) {
+      success
+      message
+    }
+  }
+`;
+
+const sendBudgetAlertMutation = /* GraphQL */ `
+  mutation SendBudgetAlert($email: String!, $category: String!, $exceeded: Float!) {
+    sendBudgetAlert(email: $email, category: $category, exceeded: $exceeded) {
+      success
+      message
+    }
+  }
+`;
+
 interface Transaction {
   id: string;
   description: string;
@@ -277,6 +295,29 @@ function App() {
     }
   };
 
+  const handleSendMonthlyReport = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const result: any = await client.graphql({
+        query: sendMonthlyReportMutation,
+        variables: { email: user.signInDetails?.loginId || email }
+      });
+      
+      if (result.data.sendMonthlyReport.success) {
+        alert('✅ Monthly report sent to your email!');
+      } else {
+        alert('❌ ' + result.data.sendMonthlyReport.message);
+      }
+    } catch (error) {
+      console.error('Error sending monthly report:', error);
+      alert('Failed to send monthly report');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!user) {
     if (needsConfirmation) {
       return (
@@ -418,6 +459,16 @@ function App() {
           </div>
         </div>
       )}
+
+      <div className="email-actions">
+        <button 
+          onClick={handleSendMonthlyReport} 
+          className="btn-email"
+          disabled={loading}
+        >
+          📧 Email Monthly Report
+        </button>
+      </div>
 
       <div className="main-content">
         <div className="form-section">
