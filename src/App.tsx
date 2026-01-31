@@ -291,19 +291,26 @@ function App() {
     
     try {
       setLoading(true);
+      const userEmail = user.signInDetails?.loginId || email;
+      
+      console.log('Sending monthly report to:', userEmail);
+      
       const result: any = await client.graphql({
         query: sendMonthlyReportMutation,
-        variables: { email: user.signInDetails?.loginId || email }
+        variables: { email: userEmail }
       });
+      
+      console.log('Monthly report result:', result);
       
       if (result.data.sendMonthlyReport.success) {
         alert('✅ Monthly report sent to your email!');
       } else {
         alert('❌ ' + result.data.sendMonthlyReport.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending monthly report:', error);
-      alert('Failed to send monthly report');
+      console.error('Error details:', error.errors || error.message);
+      alert('Failed to send monthly report: ' + (error.errors?.[0]?.message || error.message));
     } finally {
       setLoading(false);
     }

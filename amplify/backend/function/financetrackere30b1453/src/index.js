@@ -23,9 +23,6 @@ exports.handler = async (event) => {
             case 'sendBudgetAlert':
                 return await sendBudgetAlert(event);
             
-            case 'subscribeToNotifications':
-                return await subscribeToNotifications(event);
-            
             default:
                 throw new Error(`Unknown field: ${fieldName}`);
         }
@@ -42,12 +39,8 @@ async function calculateSummaryFromDB(event) {
         throw new Error('Transaction table name not configured');
     }
     
-    // Get the user's identity from the event (Cognito user)
-    const userId = event.identity?.sub || event.identity?.username;
-    
     try {
         // Scan all transactions from DynamoDB
-        // In production, you'd want to add pagination and filtering by user
         const result = await dynamodb.scan({
             TableName: tableName
         }).promise();
@@ -78,15 +71,16 @@ async function calculateSummaryFromDB(event) {
 
 async function sendMonthlyReport(event) {
     const { email } = event.arguments;
-    const topicArn = process.env.MONTHLY_REPORT_TOPIC_ARN;
-    const tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
+    const env = process.env.ENV || 'main';
+    const region = process.env.REGION || 'us-east-1';
     
-    if (!topicArn) {
-        return {
-            success: false,
-            message: 'Monthly report topic not configured'
-        };
-    }
+    // Construct topic ARN from environment
+    const accountId = await getAccountId();
+    const topicArn = `arn:aws:sns:${region}:${accountId}:finance-monthly-reports-${env}`;
+    
+    console.log('Using topic ARN:', topicArn);
+    
+    const tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
     
     try {
         // Get financial summary from DynamoDB
@@ -151,15 +145,16 @@ Finance Tracker Team`,
 
 async function sendBudgetAlert(event) {
     const { email, category, exceeded } = event.arguments;
-    const topicArn = process.env.BUDGET_ALERT_TOPIC_ARN;
-    const tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
+    const env = process.env.ENV || 'main';
+    const region = process.env.REGION || 'us-east-1';
     
-    if (!topicArn) {
-        return {
-            success: false,
-            message: 'Budget alert topic not configured'
-        };
-    }
+    // Construct topic ARN from environment
+    const accountId = await getAccountId();
+    const topicArn = `arn:aws:sns:${region}:${accountId}:finance-budget-alerts-${env}`;
+    
+    console.log('Using topic ARN:', topicArn);
+    
+    const tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
     
     try {
         // Get category spending from DynamoDB
@@ -222,4 +217,11 @@ Finance Tracker Team`,
             message: `Failed to send alert: ${error.message}`
         };
     }
+}
+
+// Helper function to get AWS account ID from STS
+async function getAccountId() {
+    const sts = new AWS.STS();
+    const identity = await sts.getCallerIdentity().promise();
+    return identity.Account;
 }
