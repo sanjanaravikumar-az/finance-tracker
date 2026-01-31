@@ -13,33 +13,49 @@ const sts = new STSClient({});
  * @type {import('@types/aws-lambda').AppSyncResolverHandler}
  */
 exports.handler = async (event) => {
-    console.log(`EVENT: ${JSON.stringify(event)}`);
+    console.log(`EVENT: ${JSON.stringify(event, null, 2)}`);
     
-    const fieldName = event.info?.fieldName;
+    // AppSync passes fieldName in event.info.fieldName
+    const fieldName = event.info?.fieldName || event.fieldName;
+    
+    // Get arguments - AppSync can pass them in different ways
+    const args = event.arguments || event.args || {};
+    
+    console.log('Field Name:', fieldName);
+    console.log('Arguments:', JSON.stringify(args, null, 2));
     
     try {
         // Handle different GraphQL operations
         switch (fieldName) {
             case 'calculateFinancialSummary':
-                return await calculateSummaryFromDB(event);
+                return await calculateSummaryFromDB();
             
             case 'sendMonthlyReport':
-                return await sendMonthlyReport(event);
+                return await sendMonthlyReport(args);
             
             case 'sendBudgetAlert':
-                return await sendBudgetAlert(event);
+                return await sendBudgetAlert(args);
             
             default:
-                throw new Error(`Unknown field: ${fieldName}`);
+                console.error('Unknown operation. Event structure:', JSON.stringify(event, null, 2));
+                throw new Error(`Unknown field: ${fieldName}. Full event logged to CloudWatch.`);
         }
     } catch (error) {
-        console.error('Error:', error);
-        throw error;
+        console.error('Handler Error:', error);
+        console.error('Error stack:', error.stack);
+        // Return error in a format AppSync can handle
+        return {
+            success: false,
+            message: `Error: ${error.message}`
+        };
     }
 };
 
-async function calculateSummaryFromDB(event) {
+async function calculateSummaryFromDB() {
+    console.log('calculateSummaryFromDB called');
     const tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
+    
+    console.log('Table name:', tableName);
     
     if (!tableName) {
         throw new Error('Transaction table name not configured');
@@ -52,6 +68,7 @@ async function calculateSummaryFromDB(event) {
         }));
         
         const transactions = result.Items || [];
+        console.log('Found transactions:', transactions.length);
         
         // Calculate financial summary
         const summary = transactions.reduce((acc, transaction) => {
@@ -68,6 +85,7 @@ async function calculateSummaryFromDB(event) {
             ? parseFloat(((summary.balance / summary.totalIncome) * 100).toFixed(2))
             : 0;
         
+        console.log('Calculated summary:', summary);
         return summary;
     } catch (error) {
         console.error('Error reading from DynamoDB:', error);
@@ -75,26 +93,41 @@ async function calculateSummaryFromDB(event) {
     }
 }
 
-async function sendMonthlyReport(event) {
-    const { email } = event.arguments;
+async function sendMonthlyReport(args) {
+    console.log('sendMonthlyReport called with args:', JSON.stringify(args, null, 2));
+    
+    const email = args.email;
+    console.log('Email:', email);
+    
+    if (!email) {
+        console.error('No email provided in arguments');
+        return {
+            success: false,
+            message: 'Email is required'
+        };
+    }
+    
     const env = process.env.ENV || 'main';
     const region = process.env.REGION || 'us-east-1';
     
-    // Construct topic ARN from environment
-    const accountId = await getAccountId();
-    const topicArn = `arn:aws:sns:${region}:${accountId}:finance-monthly-reports-${env}`;
-    
-    console.log('Using topic ARN:', topicArn);
-    
-    const tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
-    
     try {
+        // Construct topic ARN from environment
+        const accountId = await getAccountId();
+        const topicArn = `arn:aws:sns:${region}:${accountId}:finance-monthly-reports-${env}`;
+        
+        console.log('Using topic ARN:', topicArn);
+        
+        const tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
+        console.log('Table name:', tableName);
+        
         // Get financial summary from DynamoDB
         const result = await dynamodb.send(new ScanCommand({
             TableName: tableName
         }));
         
         const transactions = result.Items || [];
+        console.log('Found transactions:', transactions.length);
+        
         const summary = transactions.reduce((acc, transaction) => {
             if (transaction.type === 'INCOME') {
                 acc.totalIncome += transaction.amount;
@@ -109,8 +142,10 @@ async function sendMonthlyReport(event) {
             ? ((summary.balance / summary.totalIncome) * 100).toFixed(2)
             : 0;
         
+        console.log('Calculated summary:', summary);
+        
         // Send SNS notification with actual data
-        await sns.send(new PublishCommand({
+        const snsResult = await sns.send(new PublishCommand({
             TopicArn: topicArn,
             Subject: '📊 Your Monthly Financial Report',
             Message: `Hello,
@@ -136,33 +171,43 @@ Finance Tracker Team`,
             }
         }));
         
-        return {
+        console.log('SNS publish result:', JSON.stringify(snsResult, null, 2));
+        
+        const response = {
             success: true,
             message: 'Monthly report sent successfully!'
         };
+        
+        console.log('Returning response:', response);
+        return response;
     } catch (error) {
         console.error('Error sending monthly report:', error);
-        return {
+        console.error('Error stack:', error.stack);
+        const errorResponse = {
             success: false,
             message: `Failed to send report: ${error.message}`
         };
+        console.log('Returning error response:', errorResponse);
+        return errorResponse;
     }
 }
 
-async function sendBudgetAlert(event) {
-    const { email, category, exceeded } = event.arguments;
+async function sendBudgetAlert(args) {
+    console.log('sendBudgetAlert called with args:', JSON.stringify(args, null, 2));
+    
+    const { email, category, exceeded } = args;
     const env = process.env.ENV || 'main';
     const region = process.env.REGION || 'us-east-1';
     
-    // Construct topic ARN from environment
-    const accountId = await getAccountId();
-    const topicArn = `arn:aws:sns:${region}:${accountId}:finance-budget-alerts-${env}`;
-    
-    console.log('Using topic ARN:', topicArn);
-    
-    const tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
-    
     try {
+        // Construct topic ARN from environment
+        const accountId = await getAccountId();
+        const topicArn = `arn:aws:sns:${region}:${accountId}:finance-budget-alerts-${env}`;
+        
+        console.log('Using topic ARN:', topicArn);
+        
+        const tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
+        
         // Get category spending from DynamoDB
         const result = await dynamodb.send(new ScanCommand({
             TableName: tableName,
