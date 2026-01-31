@@ -145,6 +145,7 @@ async function sendMonthlyReport(args) {
         console.log('Calculated summary:', summary);
         
         // Send SNS notification with actual data
+        console.log('Attempting to publish to SNS...');
         const snsResult = await sns.send(new PublishCommand({
             TopicArn: topicArn,
             Subject: '📊 Your Monthly Financial Report',
@@ -172,10 +173,11 @@ Finance Tracker Team`,
         }));
         
         console.log('SNS publish result:', JSON.stringify(snsResult, null, 2));
+        console.log('Message ID:', snsResult.MessageId);
         
         const response = {
             success: true,
-            message: 'Monthly report sent successfully!'
+            message: `Monthly report sent successfully! Message ID: ${snsResult.MessageId}. Note: SNS topic needs email subscription to deliver emails.`
         };
         
         console.log('Returning response:', response);
