@@ -34,13 +34,8 @@ export class cdkStack extends cdk.Stack {
       displayName: 'Finance Tracker Monthly Reports',
     });
 
-    // Add email subscription for monthly reports
-    // Note: User will need to confirm subscription via email
-    new sns.Subscription(this, 'MonthlyReportEmailSubscription', {
-      topic: monthlyReportTopic,
-      protocol: sns.SubscriptionProtocol.EMAIL,
-      endpoint: 'sanjana.ravikumar.az@gmail.com', // Replace with your email
-    });
+    // Note: Email subscriptions will be managed dynamically by Lambda
+    // when users click the email button (allows any user to subscribe)
 
     new cdk.CfnOutput(this, 'MonthlyReportTopicArn', {
       value: monthlyReportTopic.topicArn,

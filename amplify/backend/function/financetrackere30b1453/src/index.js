@@ -7,7 +7,7 @@
 	REGION
 Amplify Params - DO NOT EDIT */const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, ScanCommand } = require('@aws-sdk/lib-dynamodb');
-const { SNSClient, PublishCommand, CreateTopicCommand, SubscribeCommand } = require('@aws-sdk/client-sns');
+const { SNSClient, PublishCommand, SubscribeCommand } = require('@aws-sdk/client-sns');
 const { STSClient, GetCallerIdentityCommand } = require('@aws-sdk/client-sts');
 
 const dynamoClient = new DynamoDBClient({});
@@ -171,17 +171,18 @@ async function sendMonthlyReport(args) {
         };
     }
     
-    const env = process.env.ENV || 'main';
-    console.log('Environment:', env);
-    
     try {
-        // Ensure SNS topic exists (create if it doesn't)
-        const topicName = `finance-monthly-reports-${env}`;
-        console.log('Topic name to create:', topicName);
-        console.log('About to call ensureTopicExists...');
+        // Use the SNS topic created by the custom resource
+        const topicArn = process.env.MONTHLY_REPORT_TOPIC_ARN;
+        console.log('Using topic ARN from environment:', topicArn);
         
-        const topicArn = await ensureTopicExists(topicName, email);
-        console.log('ensureTopicExists returned. Topic ARN:', topicArn);
+        if (!topicArn || topicArn === 'NONE') {
+            throw new Error('Monthly report topic ARN not configured');
+        }
+        
+        // Subscribe the user's email to the topic
+        await subscribeEmailToTopic(topicArn, email);
+        console.log('Email subscribed to topic');
         
         const tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
         console.log('Table name:', tableName);
@@ -270,14 +271,19 @@ async function sendBudgetAlert(args) {
     console.log('sendBudgetAlert called with args:', JSON.stringify(args, null, 2));
     
     const { email, category, exceeded } = args;
-    const env = process.env.ENV || 'main';
     
     try {
-        // Ensure SNS topic exists
-        const topicName = `finance-budget-alerts-${env}`;
-        const topicArn = await ensureTopicExists(topicName, email);
+        // Use the SNS topic created by the custom resource
+        const topicArn = process.env.BUDGET_ALERT_TOPIC_ARN;
+        console.log('Using topic ARN from environment:', topicArn);
         
-        console.log('Using topic ARN:', topicArn);
+        if (!topicArn || topicArn === 'NONE') {
+            throw new Error('Budget alert topic ARN not configured');
+        }
+        
+        // Subscribe the user's email to the topic
+        await subscribeEmailToTopic(topicArn, email);
+        console.log('Email subscribed to topic');
         
         const tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
         
@@ -349,21 +355,12 @@ async function getAccountId() {
     return identity.Account;
 }
 
-// Helper function to ensure SNS topic exists (creates if it doesn't)
-async function ensureTopicExists(topicName, email) {
-    console.log('Ensuring topic exists:', topicName);
+// Helper function to subscribe an email to an existing SNS topic
+async function subscribeEmailToTopic(topicArn, email) {
+    console.log('Subscribing email to topic:', topicArn);
     console.log('Email for subscription:', email);
     
     try {
-        // Try to create the topic (idempotent - returns existing topic if it exists)
-        console.log('Attempting to create topic...');
-        const createResult = await sns.send(new CreateTopicCommand({
-            Name: topicName
-        }));
-        
-        const topicArn = createResult.TopicArn;
-        console.log('Topic created/found. ARN:', topicArn);
-        
         // Subscribe the email to the topic
         console.log('Attempting to subscribe email to topic...');
         const subscribeResult = await sns.send(new SubscribeCommand({
@@ -379,13 +376,13 @@ async function ensureTopicExists(topicName, email) {
             console.log('Email subscription pending confirmation - user needs to check email');
         }
         
-        return topicArn;
+        return subscribeResult.SubscriptionArn;
     } catch (error) {
-        console.error('Error in ensureTopicExists:', error);
+        console.error('Error in subscribeEmailToTopic:', error);
         console.error('Error name:', error.name);
         console.error('Error code:', error.code);
         console.error('Error message:', error.message);
         console.error('Error stack:', error.stack);
-        throw new Error(`Failed to create/access SNS topic: ${error.message}`);
+        throw new Error(`Failed to subscribe email to SNS topic: ${error.message}`);
     }
 }

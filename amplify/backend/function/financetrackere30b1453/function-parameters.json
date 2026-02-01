@@ -8,6 +8,14 @@
         "GraphQLAPIIdOutput",
         "GraphQLAPIEndpointOutput"
       ]
+    },
+    {
+      "category": "custom",
+      "resourceName": "customfinance",
+      "attributes": [
+        "BudgetAlertTopicArn",
+        "MonthlyReportTopicArn"
+      ]
     }
   ],
   "permissions": {

@@ -72,6 +72,14 @@
           ],
           "category": "auth",
           "resourceName": "financetrackerb192a2d4"
+        },
+        {
+          "attributes": [
+            "BudgetAlertTopicArn",
+            "MonthlyReportTopicArn"
+          ],
+          "category": "custom",
+          "resourceName": "customfinance"
         }
       ],
       "providerPlugin": "awscloudformation",
