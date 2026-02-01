@@ -2,28 +2,11 @@
   {
     "Action": [
       "sns:Publish",
-      "sns:ListTopics"
+      "sns:ListTopics",
+      "sns:CreateTopic",
+      "sns:Subscribe"
     ],
-    "Resource": [
-      {
-        "Fn::Sub": [
-          "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:finance-budget-alerts-*",
-          {}
-        ]
-      },
-      {
-        "Fn::Sub": [
-          "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:finance-monthly-reports-*",
-          {}
-        ]
-      },
-      {
-        "Fn::Sub": [
-          "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*",
-          {}
-        ]
-      }
-    ]
+    "Resource": ["*"]
   },
   {
     "Action": [
@@ -39,5 +22,11 @@
         ]
       }
     ]
+  },
+  {
+    "Action": [
+      "sts:GetCallerIdentity"
+    ],
+    "Resource": ["*"]
   }
 ]

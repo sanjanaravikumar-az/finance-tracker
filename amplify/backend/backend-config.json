@@ -56,6 +56,24 @@
   "function": {
     "financetrackere30b1453": {
       "build": true,
+      "dependsOn": [
+        {
+          "attributes": [
+            "GraphQLAPIIdOutput",
+            "GraphQLAPIEndpointOutput",
+            "GraphQLAPIKeyOutput"
+          ],
+          "category": "api",
+          "resourceName": "financetracker"
+        },
+        {
+          "attributes": [
+            "UserPoolId"
+          ],
+          "category": "auth",
+          "resourceName": "financetrackerb192a2d4"
+        }
+      ],
       "providerPlugin": "awscloudformation",
       "service": "Lambda"
     }

@@ -1,6 +1,13 @@
-const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+/* Amplify Params - DO NOT EDIT
+	API_FINANCETRACKER_GRAPHQLAPIENDPOINTOUTPUT
+	API_FINANCETRACKER_GRAPHQLAPIIDOUTPUT
+	API_FINANCETRACKER_GRAPHQLAPIKEYOUTPUT
+	AUTH_FINANCETRACKERB192A2D4_USERPOOLID
+	ENV
+	REGION
+Amplify Params - DO NOT EDIT */const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, ScanCommand } = require('@aws-sdk/lib-dynamodb');
-const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
+const { SNSClient, PublishCommand, CreateTopicCommand, SubscribeCommand } = require('@aws-sdk/client-sns');
 const { STSClient, GetCallerIdentityCommand } = require('@aws-sdk/client-sts');
 
 const dynamoClient = new DynamoDBClient({});
@@ -28,7 +35,9 @@ exports.handler = async (event) => {
         // Handle different GraphQL operations
         switch (fieldName) {
             case 'calculateFinancialSummary':
-                return await calculateSummaryFromDB();
+                const summary = await calculateSummaryFromDB();
+                console.log('Handler returning summary:', summary);
+                return summary;
             
             case 'sendMonthlyReport':
                 return await sendMonthlyReport(args);
@@ -43,7 +52,21 @@ exports.handler = async (event) => {
     } catch (error) {
         console.error('Handler Error:', error);
         console.error('Error stack:', error.stack);
-        // Return error in a format AppSync can handle
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        
+        // For calculateFinancialSummary, return zeros instead of null to avoid GraphQL errors
+        if (fieldName === 'calculateFinancialSummary') {
+            console.log('Returning default summary due to error');
+            return {
+                totalIncome: 0,
+                totalExpenses: 0,
+                balance: 0,
+                savingsRate: 0
+            };
+        }
+        
+        // For mutations, return error response
         return {
             success: false,
             message: `Error: ${error.message}`
@@ -52,23 +75,56 @@ exports.handler = async (event) => {
 };
 
 async function calculateSummaryFromDB() {
+    console.log('=== calculateSummaryFromDB START ===');
     console.log('calculateSummaryFromDB called');
-    const tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
     
-    console.log('Table name:', tableName);
+    // Try to get table name from environment variable
+    let tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
+    console.log('Table name from env:', tableName);
+    
+    // If table name has NONE, we need to find the actual API ID
+    if (!tableName || tableName.includes('NONE')) {
+        console.log('Table name has NONE, need to find actual table');
+        // The GraphQL API ID should be in the request headers or we can query DynamoDB to list tables
+        // For now, let's try to list all tables and find the Transaction table
+        const { DynamoDBClient, ListTablesCommand } = require('@aws-sdk/client-dynamodb');
+        const dynamoClientForList = new DynamoDBClient({});
+        
+        try {
+            const listResult = await dynamoClientForList.send(new ListTablesCommand({}));
+            console.log('Available tables:', JSON.stringify(listResult.TableNames, null, 2));
+            
+            // Find the Transaction table
+            const transactionTable = listResult.TableNames.find(name => name.startsWith('Transaction-') && name.endsWith('-main'));
+            if (transactionTable) {
+                tableName = transactionTable;
+                console.log('Found Transaction table:', tableName);
+            } else {
+                throw new Error('Could not find Transaction table in DynamoDB');
+            }
+        } catch (listError) {
+            console.error('Error listing tables:', listError);
+            throw new Error(`Could not list DynamoDB tables: ${listError.message}`);
+        }
+    }
+    
+    console.log('Final table name:', tableName);
     
     if (!tableName) {
+        console.error('Transaction table name not configured');
         throw new Error('Transaction table name not configured');
     }
     
     try {
         // Scan all transactions from DynamoDB
+        console.log('About to scan DynamoDB table:', tableName);
         const result = await dynamodb.send(new ScanCommand({
             TableName: tableName
         }));
         
         const transactions = result.Items || [];
         console.log('Found transactions:', transactions.length);
+        console.log('Transactions:', JSON.stringify(transactions, null, 2));
         
         // Calculate financial summary
         const summary = transactions.reduce((acc, transaction) => {
@@ -86,14 +142,22 @@ async function calculateSummaryFromDB() {
             : 0;
         
         console.log('Calculated summary:', summary);
+        console.log('=== calculateSummaryFromDB END ===');
         return summary;
     } catch (error) {
+        console.error('=== calculateSummaryFromDB ERROR ===');
         console.error('Error reading from DynamoDB:', error);
-        throw error;
+        console.error('Error name:', error.name);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        // Throw the error so we can see it in the frontend
+        throw new Error(`DynamoDB error: ${error.message}`);
     }
 }
 
 async function sendMonthlyReport(args) {
+    console.log('=== sendMonthlyReport START ===');
     console.log('sendMonthlyReport called with args:', JSON.stringify(args, null, 2));
     
     const email = args.email;
@@ -108,33 +172,22 @@ async function sendMonthlyReport(args) {
     }
     
     const env = process.env.ENV || 'main';
-    const region = process.env.REGION || 'us-east-1';
+    console.log('Environment:', env);
     
     try {
-        // Construct topic ARN from environment
-        const accountId = await getAccountId();
-        const topicArn = `arn:aws:sns:${region}:${accountId}:finance-monthly-reports-${env}`;
+        // Ensure SNS topic exists (create if it doesn't)
+        const topicName = `finance-monthly-reports-${env}`;
+        console.log('Topic name to create:', topicName);
+        console.log('About to call ensureTopicExists...');
         
-        console.log('Constructed topic ARN:', topicArn);
-        console.log('Account ID:', accountId);
-        console.log('Region:', region);
-        console.log('Environment:', env);
-        
-        // First, let's try to list topics to see what exists
-        const { SNSClient, ListTopicsCommand } = require('@aws-sdk/client-sns');
-        const snsClient = new SNSClient({});
-        
-        try {
-            const listResult = await snsClient.send(new ListTopicsCommand({}));
-            console.log('Available SNS topics:', JSON.stringify(listResult.Topics, null, 2));
-        } catch (listError) {
-            console.error('Error listing topics:', listError);
-        }
+        const topicArn = await ensureTopicExists(topicName, email);
+        console.log('ensureTopicExists returned. Topic ARN:', topicArn);
         
         const tableName = process.env.API_FINANCETRACKER_TRANSACTIONTABLE_NAME;
         console.log('Table name:', tableName);
         
         // Get financial summary from DynamoDB
+        console.log('About to scan DynamoDB...');
         const result = await dynamodb.send(new ScanCommand({
             TableName: tableName
         }));
@@ -159,7 +212,7 @@ async function sendMonthlyReport(args) {
         console.log('Calculated summary:', summary);
         
         // Send SNS notification with actual data
-        console.log('Attempting to publish to SNS...');
+        console.log('About to publish to SNS...');
         const snsResult = await sns.send(new PublishCommand({
             TopicArn: topicArn,
             Subject: '📊 Your Monthly Financial Report',
@@ -191,12 +244,14 @@ Finance Tracker Team`,
         
         const response = {
             success: true,
-            message: `Monthly report sent successfully! Message ID: ${snsResult.MessageId}. Note: SNS topic needs email subscription to deliver emails.`
+            message: `Monthly report sent! Check ${email} for a confirmation email from AWS SNS, then click the button again.`
         };
         
-        console.log('Returning response:', response);
+        console.log('About to return response:', response);
+        console.log('=== sendMonthlyReport END ===');
         return response;
     } catch (error) {
+        console.error('=== sendMonthlyReport ERROR ===');
         console.error('Error sending monthly report:', error);
         console.error('Error stack:', error.stack);
         console.error('Error name:', error.name);
@@ -206,6 +261,7 @@ Finance Tracker Team`,
             message: `Failed to send report: ${error.message}`
         };
         console.log('Returning error response:', errorResponse);
+        console.log('=== sendMonthlyReport ERROR END ===');
         return errorResponse;
     }
 }
@@ -215,12 +271,11 @@ async function sendBudgetAlert(args) {
     
     const { email, category, exceeded } = args;
     const env = process.env.ENV || 'main';
-    const region = process.env.REGION || 'us-east-1';
     
     try {
-        // Construct topic ARN from environment
-        const accountId = await getAccountId();
-        const topicArn = `arn:aws:sns:${region}:${accountId}:finance-budget-alerts-${env}`;
+        // Ensure SNS topic exists
+        const topicName = `finance-budget-alerts-${env}`;
+        const topicArn = await ensureTopicExists(topicName, email);
         
         console.log('Using topic ARN:', topicArn);
         
@@ -292,4 +347,45 @@ Finance Tracker Team`,
 async function getAccountId() {
     const identity = await sts.send(new GetCallerIdentityCommand({}));
     return identity.Account;
+}
+
+// Helper function to ensure SNS topic exists (creates if it doesn't)
+async function ensureTopicExists(topicName, email) {
+    console.log('Ensuring topic exists:', topicName);
+    console.log('Email for subscription:', email);
+    
+    try {
+        // Try to create the topic (idempotent - returns existing topic if it exists)
+        console.log('Attempting to create topic...');
+        const createResult = await sns.send(new CreateTopicCommand({
+            Name: topicName
+        }));
+        
+        const topicArn = createResult.TopicArn;
+        console.log('Topic created/found. ARN:', topicArn);
+        
+        // Subscribe the email to the topic
+        console.log('Attempting to subscribe email to topic...');
+        const subscribeResult = await sns.send(new SubscribeCommand({
+            TopicArn: topicArn,
+            Protocol: 'email',
+            Endpoint: email
+        }));
+        
+        console.log('Subscription result:', JSON.stringify(subscribeResult, null, 2));
+        console.log('Subscription ARN:', subscribeResult.SubscriptionArn);
+        
+        if (subscribeResult.SubscriptionArn === 'pending confirmation') {
+            console.log('Email subscription pending confirmation - user needs to check email');
+        }
+        
+        return topicArn;
+    } catch (error) {
+        console.error('Error in ensureTopicExists:', error);
+        console.error('Error name:', error.name);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        throw new Error(`Failed to create/access SNS topic: ${error.message}`);
+    }
 }

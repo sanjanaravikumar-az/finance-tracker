@@ -2,17 +2,29 @@
   "lambdaLayers": [],
   "dependsOn": [
     {
-      "category": "custom",
-      "resourceName": "customfinance",
-      "attributes": ["BudgetAlertTopicArn", "MonthlyReportTopicArn"]
-    },
-    {
       "category": "api",
       "resourceName": "financetracker",
-      "attributes": ["GraphQLAPIIdOutput", "GraphQLAPIEndpointOutput"]
+      "attributes": [
+        "GraphQLAPIIdOutput",
+        "GraphQLAPIEndpointOutput"
+      ]
     }
   ],
   "permissions": {
-    "sts": ["GetCallerIdentity"]
+    "api": {
+      "financetracker": [
+        "Query",
+        "Mutation",
+        "Subscription"
+      ]
+    },
+    "auth": {
+      "financetrackerb192a2d4": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ]
+    }
   }
 }

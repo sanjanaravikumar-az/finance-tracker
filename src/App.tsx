@@ -266,23 +266,8 @@ function App() {
       setSummary(result.data.calculateFinancialSummary);
     } catch (error) {
       console.error('Error calculating summary via Lambda:', error);
-      // Fallback to local calculation if Lambda fails
-      const localSummary = transactions.reduce(
-        (acc, t) => {
-          if (t.type === 'INCOME') {
-            acc.totalIncome += t.amount;
-          } else {
-            acc.totalExpenses += t.amount;
-          }
-          return acc;
-        },
-        { totalIncome: 0, totalExpenses: 0, balance: 0, savingsRate: 0 }
-      );
-      localSummary.balance = localSummary.totalIncome - localSummary.totalExpenses;
-      localSummary.savingsRate = localSummary.totalIncome > 0
-        ? parseFloat(((localSummary.balance / localSummary.totalIncome) * 100).toFixed(2))
-        : 0;
-      setSummary(localSummary);
+      // Don't use fallback - show error to user
+      alert('Failed to calculate summary from Lambda. Check console for details.');
     }
   };
 
