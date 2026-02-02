@@ -67,9 +67,8 @@ export const data = defineData({
             modelNameToTableNameMapping: { Transaction: "Transaction-dfw7ohkaffdonp4v2b7tn4pvmq-main", Budget: "Budget-dfw7ohkaffdonp4v2b7tn4pvmq-main", FinancialSummary: "FinancialSummary-dfw7ohkaffdonp4v2b7tn4pvmq-main" }
         }],
     authorizationModes: {
-        defaultAuthorizationMode: "apiKey",
-        apiKeyAuthorizationMode: { expiresInDays: 100 },
-        userPoolAuthorizationMode: { }
+        defaultAuthorizationMode: "userPool",
+        apiKeyAuthorizationMode: { expiresInDays: 100 }
     },
     schema
 });
