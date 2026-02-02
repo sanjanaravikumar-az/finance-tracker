@@ -15,7 +15,11 @@
     "react-dom": "^19.2.0",
     "@aws-amplify/cli-extensibility-helper": "^3.0.0",
     "aws-cdk-lib": "~2.189.1",
-    "constructs": "^10.0.5"
+    "constructs": "^10.0.5",
+    "@aws-sdk/client-dynamodb": "^3.821.0",
+    "@aws-sdk/lib-dynamodb": "^3.821.0",
+    "@aws-sdk/client-sns": "^3.821.0",
+    "@aws-sdk/client-sts": "^3.821.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
