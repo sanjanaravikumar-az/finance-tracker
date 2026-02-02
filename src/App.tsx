@@ -192,7 +192,10 @@ function App() {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-      const result: any = await client.graphql({ query: listTransactions });
+      const result: any = await client.graphql({ 
+        query: listTransactions,
+        authMode: 'userPool'
+      });
       setTransactions(result.data.listTransactions.items);
     } catch (error) {
       console.error('Error fetching transactions:', error);
@@ -239,6 +242,7 @@ function App() {
       await client.graphql({
         query: createTransaction,
         variables: { input },
+        authMode: 'userPool'
       });
 
       // Reset form
@@ -261,7 +265,8 @@ function App() {
     try {
       // Call Lambda function via GraphQL query (Lambda reads from DynamoDB)
       const result: any = await client.graphql({ 
-        query: calculateFinancialSummaryQuery
+        query: calculateFinancialSummaryQuery,
+        authMode: 'userPool'
       });
       setSummary(result.data.calculateFinancialSummary);
     } catch (error) {
@@ -282,7 +287,8 @@ function App() {
       
       const result: any = await client.graphql({
         query: sendMonthlyReportMutation,
-        variables: { email: userEmail }
+        variables: { email: userEmail },
+        authMode: 'userPool'
       });
       
       console.log('Monthly report result:', result);
