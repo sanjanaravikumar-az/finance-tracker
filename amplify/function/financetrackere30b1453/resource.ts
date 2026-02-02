@@ -13,5 +13,6 @@ export const financetrackere30b1453 = defineFunction({
         ENV: `${branchName}`, 
         REGION: "us-east-1" 
     },
-    runtime: 22
+    runtime: 22,
+    resourceGroupName: "data"
 });
