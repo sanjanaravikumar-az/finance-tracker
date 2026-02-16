@@ -20,7 +20,10 @@ export type AmplifyDependentResourcesAttributes = {
   "custom": {
     "customfinance": {
       "BudgetAlertTopicArn": "string",
-      "MonthlyReportTopicArn": "string"
+      "MonthlyReportTopicArn": "string",
+      "ReferencedGraphQLApiId": "string",
+      "ReferencedS3BucketName": "string",
+      "ReferencedUserPoolId": "string"
     }
   },
   "function": {

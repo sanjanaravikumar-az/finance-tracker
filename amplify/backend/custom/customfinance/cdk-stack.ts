@@ -79,7 +79,7 @@ export class cdkStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, 'ReferencedS3BucketName', {
       value: s3BucketName,
-      description: 'S3 bucket name from Amplify storage resource',
+      description: 'S3 Bucket Name from Amplify storage resource',
     });
   }
 }
