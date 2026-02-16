@@ -32,7 +32,8 @@ export class cdkStack extends cdk.Stack {
     // Dynamic references to other resources' outputs
     const graphqlApiId = cdk.Fn.ref(dependencies.api.financetracker.GraphQLAPIIdOutput);
     const userPoolId = cdk.Fn.ref(dependencies.auth.financetrackerb192a2d4.UserPoolId);
-    const s3BucketName = cdk.Fn.ref(dependencies.storage.s361d53dc0.BucketName);
+    // Use raw logical ID to bypass cloud build type generation bug for storage
+    const s3BucketName = cdk.Fn.ref('storages361d53dc0BucketName');
 
     // 1. SNS Topic for Budget Alerts
     const budgetAlertTopic = new sns.Topic(this, 'BudgetAlertTopic', {
