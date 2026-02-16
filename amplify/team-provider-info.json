@@ -28,7 +28,8 @@
         }
       },
       "custom": {
-        "customfinance": {}
+        "customfinance": {},
+        "custom2": {}
       }
     }
   }

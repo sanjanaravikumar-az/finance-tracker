@@ -18,6 +18,10 @@ export type AmplifyDependentResourcesAttributes = {
     }
   },
   "custom": {
+    "custom2": {
+      "QueueArn": "string",
+      "QueueUrl": "string"
+    },
     "customfinance": {
       "BudgetAlertTopicArn": "string",
       "MonthlyReportTopicArn": "string",

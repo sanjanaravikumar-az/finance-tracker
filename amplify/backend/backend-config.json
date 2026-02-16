@@ -48,6 +48,10 @@
     }
   },
   "custom": {
+    "custom2": {
+      "providerPlugin": "awscloudformation",
+      "service": "customCDK"
+    },
     "customfinance": {
       "dependsOn": [
         {

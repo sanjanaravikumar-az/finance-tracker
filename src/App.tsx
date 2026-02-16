@@ -60,6 +60,15 @@ const sendMonthlyReportMutation = /* GraphQL */ `
   }
 `;
 
+const sendBudgetAlertMutation = /* GraphQL */ `
+  mutation SendBudgetAlert($email: String!, $category: String!, $exceeded: Float!) {
+    sendBudgetAlert(email: $email, category: $category, exceeded: $exceeded) {
+      success
+      message
+    }
+  }
+`;
+
 interface Transaction {
   id: string;
   description: string;
@@ -301,6 +310,43 @@ function App() {
     }
   };
 
+  const handleSendBudgetAlert = async () => {
+    if (!user) return;
+    
+    const alertCategory = prompt('Enter the budget category (e.g., Food, Entertainment):');
+    if (!alertCategory) return;
+    
+    const exceededStr = prompt('How much did you exceed the budget by?');
+    if (!exceededStr) return;
+    
+    const exceeded = parseFloat(exceededStr);
+    if (isNaN(exceeded)) {
+      alert('Please enter a valid number.');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const userEmail = user.signInDetails?.loginId || email;
+      
+      const result: any = await client.graphql({
+        query: sendBudgetAlertMutation,
+        variables: { email: userEmail, category: alertCategory, exceeded }
+      });
+      
+      if (result.data.sendBudgetAlert.success) {
+        alert('✅ Budget alert sent to your email!');
+      } else {
+        alert('❌ ' + result.data.sendBudgetAlert.message);
+      }
+    } catch (error: any) {
+      console.error('Error sending budget alert:', error);
+      alert('Failed to send budget alert: ' + (error.errors?.[0]?.message || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!user) {
     if (needsConfirmation) {
       return (
@@ -450,6 +496,13 @@ function App() {
           disabled={loading}
         >
           📧 Email Monthly Report
+        </button>
+        <button 
+          onClick={handleSendBudgetAlert} 
+          className="btn-email"
+          disabled={loading}
+        >
+          ⚠️ Send Budget Alert
         </button>
       </div>
 
