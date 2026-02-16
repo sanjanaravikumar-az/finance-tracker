@@ -95,10 +95,14 @@
               "Ref": "AWS::Region"
             },
             "BUDGET_ALERT_TOPIC_ARN": {
-              "Ref": "customcustomfinanceBudgetAlertTopicArn"
+              "Fn::ImportValue": {
+                "Fn::Sub": "financetracker-BudgetAlertTopicArn-${env}"
+              }
             },
             "MONTHLY_REPORT_TOPIC_ARN": {
-              "Ref": "customcustomfinanceMonthlyReportTopicArn"
+              "Fn::ImportValue": {
+                "Fn::Sub": "financetracker-MonthlyReportTopicArn-${env}"
+              }
             },
             "API_FINANCETRACKER_TRANSACTIONTABLE_NAME": {
               "Fn::Sub": "Transaction-${apifinancetrackerGraphQLAPIIdOutput}-${env}"
