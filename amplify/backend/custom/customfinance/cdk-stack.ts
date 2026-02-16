@@ -16,10 +16,28 @@ export class cdkStack extends cdk.Stack {
 
     const amplifyProjectInfo = AmplifyHelpers.getProjectInfo();
 
+    // Reference other Amplify resources (excluding function to avoid circular dependency)
+    const dependencies: AmplifyDependentResourcesAttributes =
+      AmplifyHelpers.addResourceDependency(
+        this as any,
+        amplifyResourceProps!.category,
+        amplifyResourceProps!.resourceName,
+        [
+          { category: 'api', resourceName: 'financetracker' },
+          { category: 'auth', resourceName: 'financetrackerb192a2d4' },
+          { category: 'storage', resourceName: 's361d53dc0' },
+        ]
+      );
+
+    // Dynamic references to other resources' outputs
+    const graphqlApiId = cdk.Fn.ref(dependencies.api.financetracker.GraphQLAPIIdOutput);
+    const userPoolId = cdk.Fn.ref(dependencies.auth.financetrackerb192a2d4.UserPoolId);
+    const s3BucketName = cdk.Fn.ref(dependencies.storage.s361d53dc0.BucketName);
+
     // 1. SNS Topic for Budget Alerts
     const budgetAlertTopic = new sns.Topic(this, 'BudgetAlertTopic', {
       topicName: `finance-budget-alerts-${cdk.Fn.ref('env')}`,
-      displayName: 'Finance Tracker Budget Alerts',
+      displayName: 'Fin Tracker Budget Alerts',
     });
 
     new cdk.CfnOutput(this, 'BudgetAlertTopicArn', {
@@ -47,5 +65,21 @@ export class cdkStack extends cdk.Stack {
     cdk.Tags.of(this).add('Project', 'FinanceTracker');
     cdk.Tags.of(this).add('Environment', cdk.Fn.ref('env'));
     cdk.Tags.of(this).add('ManagedBy', 'Amplify');
+
+    // 4. Export referenced resource outputs for visibility
+    new cdk.CfnOutput(this, 'ReferencedGraphQLApiId', {
+      value: graphqlApiId,
+      description: 'GraphQL API ID from Amplify API resource',
+    });
+
+    new cdk.CfnOutput(this, 'ReferencedUserPoolId', {
+      value: userPoolId,
+      description: 'Cognito User Pool ID from Amplify auth resource',
+    });
+
+    new cdk.CfnOutput(this, 'ReferencedS3BucketName', {
+      value: s3BucketName,
+      description: 'S3 bucket name from Amplify storage resource',
+    });
   }
 }
