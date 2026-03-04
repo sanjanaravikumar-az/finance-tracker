@@ -2,9 +2,9 @@ import { defineData } from "@aws-amplify/backend";
 
 const schema = `# This "input" configures a global authorization rule to enable public access to
 # all models in this schema. Learn more about authorization rules here: https://docs.amplify.aws/cli/graphql/authorization-rules
-input AMPLIFY { globalAuthRule: AuthRule = { allow: public } } # FOR TESTING ONLY!
+input AMPLIFY { globalAuthRule: AuthRule = { allow: public, provider: apiKey } } # FOR TESTING ONLY!
 
-type Transaction @model {
+type Transaction @model @auth(rules: [{ allow: public, provider: apiKey }]) {
   id: ID!
   description: String!
   amount: Float!
@@ -20,7 +20,7 @@ enum TransactionType {
   EXPENSE
 }
 
-type Budget @model {
+type Budget @model @auth(rules: [{ allow: public, provider: apiKey }]) {
   id: ID!
   category: String!
   limit: Float!
@@ -28,7 +28,7 @@ type Budget @model {
   owner: String
 }
 
-type FinancialSummary @model {
+type FinancialSummary @model @auth(rules: [{ allow: public, provider: apiKey }]) {
   id: ID!
   totalIncome: Float!
   totalExpenses: Float!
@@ -67,7 +67,7 @@ export const data = defineData({
             modelNameToTableNameMapping: { Transaction: "Transaction-dfw7ohkaffdonp4v2b7tn4pvmq-main", Budget: "Budget-dfw7ohkaffdonp4v2b7tn4pvmq-main", FinancialSummary: "FinancialSummary-dfw7ohkaffdonp4v2b7tn4pvmq-main" }
         }],
     authorizationModes: {
-        defaultAuthorizationMode: "userPool",
+        defaultAuthorizationMode: "apiKey",
         apiKeyAuthorizationMode: { expiresInDays: 100 }
     },
     schema
