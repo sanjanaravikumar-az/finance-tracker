@@ -28,7 +28,7 @@ type Budget @model @auth(rules: [{ allow: public, provider: apiKey }]) {
   owner: String
 }
 
-type FinancialSummary @model @auth(rules: [{ allow: public, provider: apiKey }]) {
+type FinancialSummary @model {
   id: ID!
   totalIncome: Float!
   totalExpenses: Float!
@@ -67,7 +67,7 @@ export const data = defineData({
             modelNameToTableNameMapping: { Transaction: "Transaction-dfw7ohkaffdonp4v2b7tn4pvmq-main", Budget: "Budget-dfw7ohkaffdonp4v2b7tn4pvmq-main", FinancialSummary: "FinancialSummary-dfw7ohkaffdonp4v2b7tn4pvmq-main" }
         }],
     authorizationModes: {
-        defaultAuthorizationMode: "apiKey",
+        defaultAuthorizationMode: "userPool",
         apiKeyAuthorizationMode: { expiresInDays: 100 }
     },
     schema
